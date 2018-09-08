@@ -1,17 +1,15 @@
 defmodule UserSupervisor do
-  @moduledoc false
-  
 
-
-  use Supervisor
+  use DynamicSupervisor
 
   def start_link(arg) do
-    Supervisor.start_link(__MODULE__, arg)
+    DynamicSupervisor.start_link(__MODULE__, arg, name: __MODULE__)
   end
 
+  @impl true
   def init(arg) do
-    children = []
-
-    supervise(children, strategy: :one_for_one)
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
+
+
 end

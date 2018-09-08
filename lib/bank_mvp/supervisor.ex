@@ -9,6 +9,8 @@ defmodule BankMvp.Supervisor do
 
   def init(arg) do
     children = [
+      BankMvp.UserLocator,
+      BankMvp.UserProfileDb,
       {DynamicSupervisor, name: BankMvp.UserSupervisor, strategy: :one_for_one}
     ]
 

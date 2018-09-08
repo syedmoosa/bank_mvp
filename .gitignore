@@ -23,6 +23,7 @@ erl_crash.dump
 bank_mvp-*.tar
 
 *.xml
-
+*.iml
+/.idea/
 
 
