@@ -33,7 +33,7 @@ defmodule BankMvp.User do
     timestamp = :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - 62167219200
     case UC.withdraw(user_id, amount) do
       response = {:ok, new_balance, debit_charge}->
-        Process.send_after(self(), :check_minimum_balance, 10*1000)
+        Process.send_after(self(), :check_minimum_balance, 60*60*1000)
         new_transaction = %Transaction{date: timestamp, description: "withdraw",
           type: :debit, balance: new_balance + debit_charge, amount: amount}
         dt = %Transaction{date: timestamp, description: "debit charge 5%",
@@ -42,7 +42,7 @@ defmodule BankMvp.User do
         {:reply, response, new_state}
 
       {:below_minimum_balance, new_balance, debit_charge}->
-        Process.send_after(self(), :check_minimum_balance, 10*1000)
+        Process.send_after(self(), :check_minimum_balance, 60*60*1000)
         new_transaction = %Transaction{date: timestamp, description: "deposit",
           type: :credit, balance: new_balance + debit_charge, amount: amount}
         dt = %Transaction{date: timestamp, description: "debit charge 5%",
@@ -66,7 +66,7 @@ defmodule BankMvp.User do
   def handle_info(:check_minimum_balance, %{id: user_id} = state) do
     case UC.check_minimum_balance(user_id) do
       {:ok, balance, debit_charge}->
-        Process.send_after(self(), :check_minimum_balance, 10*1000)
+        Process.send_after(self(), :check_minimum_balance, 60*60*1000)
         timestamp = :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - 62167219200
         dt = %Transaction{date: timestamp, description: "Minimum Balance fine 10%",
           type: :debit, balance: balance, amount: debit_charge}
