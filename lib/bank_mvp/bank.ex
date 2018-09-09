@@ -11,8 +11,13 @@ defmodule BankMvp.Bank do
 
   @type user_id :: binary()
   @type reason :: :invalid_credentials |
-          :minimum_credit_amount_is_100 |
-          :amount_is_not_credited
+                  :user_not_found |
+                  :amount_is_not_deposited |
+                  :minimum_deposit_amount_is_500 |
+                  :minimum_credit_amount_is_100 |
+                  :amount_is_not_credited |
+                  :insufficient_balance |
+                  :amount_greater_than_balance
 
   @spec register_user(email:: String.t(), password:: String.t(), deposit::integer) ::
           {:ok, user_id}| {:error, reason}
@@ -28,7 +33,7 @@ defmodule BankMvp.Bank do
   end
 
   def register_user(_, _, _)do
-    {:error, "minimum deposit amount is 500"}
+    {:error, :minimum_deposit_amount_is_500}
   end
 
   def credit(user_id, password, amount) do
@@ -41,15 +46,25 @@ defmodule BankMvp.Bank do
     else
       {:credit, false}-> {:error, :minimum_credit_amount_is_100}
       {:error, :invalid_credentials}-> {:error, :invalid_credentials}
-      {:error, reason} -> {:error, :amount_is_not_credited}
+      {:error, _reason} -> {:error, :amount_is_not_credited}
     end
   end
 
 
-#  def debit(_user_id, _password, _amount) do
-#
-#  end
-#
+  def debit(user_id, password, amount) do
+    with {:ok, :valid_credentials} <- validate_user(user_id, password),
+         true <- BV.validate_amount(:credit, amount),
+         {:ok, pid} <- get_user_location(user_id),
+         {:ok, balance} <- debit_amount(pid, amount) do
+      {user_id, balance}
+
+    else
+      {:error, :invalid_credentials}-> {:error, :invalid_credentials}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+
 #  def transaction(_user_id) do
 #
 #  end
@@ -88,6 +103,10 @@ defmodule BankMvp.Bank do
 
   defp credit_amount(pid, amount) do
     GenServer.call(pid, {:credit, amount})
+  end
+
+  defp debit_amount(pid, amount) do
+    GenServer.call(pid, {:debit, amount})
   end
 
   defp validate_user(user_id, password) do

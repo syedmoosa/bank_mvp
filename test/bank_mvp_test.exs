@@ -22,4 +22,11 @@ defmodule BankMvpTest do
     assert {:error, :invalid_credentials} = Bank.credit(user_id, "pwdsdsds", 50)
   end
 
+  test "debit amount", state do
+    user_id = state[:user_id]
+    assert {user_id, 375.0} = Bank.debit(user_id, state[:password], 100)
+    assert {:error, :insufficient_balance} = Bank.debit(user_id, state[:password], 100)
+  end
+
+
 end
