@@ -64,18 +64,18 @@ defmodule BankMvp.UserController do
 #---------------- INTERNAL FUNCTIONS
 
   defp add(user, amount) do
-    {old_balance, new_balance} = Map.get_and_update(user, :balance, fn current_balance->
+    {old_balance, new_user} = Map.get_and_update(user, :balance, fn current_balance->
       new_balance = current_balance + amount
-      {current_balance, new_balance} end)
-    {:ok, old_balance, new_balance}
+      {current_balance, Float.round(new_balance,2)} end)
+    {:ok, old_balance, new_user}
   end
 
   defp subtract(%UserModel{balance: balance}=user, amount) when amount < balance and balance >= 500 do
     debit_charge = 5/100 * 500
-    {old_balance, new_balance} = Map.get_and_update(user, :balance, fn current_balance->
+    {old_balance, new_user} = Map.get_and_update(user, :balance, fn current_balance->
                     new_balance = (current_balance - amount) - debit_charge
-                    {current_balance, new_balance} end)
-    {:ok, old_balance, new_balance, debit_charge}
+                    {current_balance, Float.round(new_balance,2)} end)
+    {:ok, old_balance, new_user, debit_charge}
   end
 
   defp subtract(%UserModel{balance: balance}, _amount) when balance < 500 do
@@ -91,10 +91,10 @@ defmodule BankMvp.UserController do
 
   defp charge_fine(user) do
     debit_charge = 10/100 * 500
-    {old_balance, new_balance} = Map.get_and_update(user, :balance, fn current_balance->
+    {old_balance, new_user} = Map.get_and_update(user, :balance, fn current_balance->
       new_balance = current_balance - debit_charge
-      {current_balance, new_balance} end)
-    {:ok, old_balance, new_balance, debit_charge}
+      {current_balance, Float.round(new_balance,2)} end)
+    {:ok, old_balance, new_user, debit_charge}
   end
 
 end
