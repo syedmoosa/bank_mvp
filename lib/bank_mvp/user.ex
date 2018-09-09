@@ -14,7 +14,7 @@ defmodule BankMvp.User do
     timestamp = :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - 62167219200 # Epoch Time
     deposit = deposit/1 # converting to float
     t = %Transaction{date: timestamp, description: "Account created", type: :credit, balance: deposit, amount: deposit }
-    Process.send_after(self(), :write_transaction_to_file, 20*1000)
+    send(self(), :write_transaction_to_file)
     {:ok, %{id: user_id, transaction_history: [t]}}
   end
 
@@ -86,7 +86,7 @@ defmodule BankMvp.User do
   def handle_info(write_transaction_to_file, %{id: user_id, transaction_history: transactions} = state) do
     JsonParser.write_to_file(user_id, transactions)
     new_state = state |> Map.update(:transaction_history, 0, fn transaction->[]  end)
-    Process.send_after(self(), :write_transaction_to_file, 20*1000)
+    Process.send_after(self(), :write_transaction_to_file, 60*60*1000)
     {:noreply, new_state}
   end
 

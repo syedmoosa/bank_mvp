@@ -24,6 +24,12 @@ defmodule BankMvp.UserProfileDb do
     {:reply, response, state}
   end
 
+  def handle_call({:get_user_details, user_id}, _from, %{users: table}= state) do
+    response = UserController.get_user_details(table, user_id)
+    {:reply, response, state}
+  end
+
+
   def handle_call(_msg, _from, state) do
     {:reply, :ok, state}
   end

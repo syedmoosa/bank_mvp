@@ -2,6 +2,20 @@
 # and its dependencies with the aid of the Mix.Config module.
 use Mix.Config
 
+config :bank_mvp, BankMailer.Mailer,
+       adapter: Swoosh.Adapters.SMTP,
+       api_key: "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",
+       relay: "smtp.sendgrid.net",
+       username: "bankmvp53@gmail.com",
+       password: "bank_mvp01",
+#       ssl: false,
+       tls: :always,
+       dkim: [s: "default", d: "smtp.sendgrid.net"],
+       retries: 2,
+       no_mx_lookups: false
+#       port: 25587
+
+
 # This configuration is loaded before any dependency and is restricted
 # to this project. If another project depends on this project, this
 # file won't be loaded nor affect the parent project. For this reason,

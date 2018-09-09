@@ -17,7 +17,9 @@ defmodule BankMvp.Bank do
                   :minimum_credit_amount_is_100 |
                   :amount_is_not_credited |
                   :insufficient_balance |
-                  :amount_greater_than_balance
+                  :amount_greater_than_balance |
+                  :unable_to_get_user_details |
+                  :unable_to_send_email
 
   @spec register_user(email:: String.t(), password:: String.t(), deposit::integer) ::
           {:ok, user_id}| {:error, reason}
@@ -65,13 +67,29 @@ defmodule BankMvp.Bank do
   end
 
 
+  def email_transaction(user_id) do
+    import Swoosh.Email
+    alias BankMvp.Mailer
+
+    with {:ok, to_user} <- get_user_details(user_id) do
+
+    email = new()
+      |> to(to_user)
+      |> from({"BankMvp", "bankmvp53@gmail.com"})
+      |> subject("Transaction History")
+      |> text_body("Hi, Please find attached the statement of your transactions")
+      |> attachment("./transactions/"<>user_id<> "/"<>user_id <>".txt")
+    Mailer.deliver(email)
+    else
+      {:error, :unable_to_get_user_details}->
+        {:error, :unable_to_send_email}
+
+    end
+  end
+
 #  def transaction(_user_id) do
 #
 #  end
-
-
-
-
 
 
 
@@ -113,4 +131,12 @@ defmodule BankMvp.Bank do
     GenServer.call(UserProfileDB, {:validate_user, user_id, :crypto.hash(:md5, password)})
   end
 
+  defp get_user_details(user_id) do
+    GenServer.call(UserProfileDB, {:get_user_details, user_id})
+  end
+
 end
+
+
+
+

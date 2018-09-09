@@ -61,6 +61,15 @@ defmodule BankMvp.UserController do
   end
 
 
+  def get_user_details(table, user_id) do
+    with {:ok, user}<- UserModel.get_user(:users_profile, user_id) do
+      {:ok, Map.get(user, :email)}
+    else
+      {:error, :not_found}-> {:error, :unable_to_get_user_details}
+    end
+  end
+
+
 #---------------- INTERNAL FUNCTIONS
 
   defp add(user, amount) do
