@@ -16,7 +16,12 @@ defmodule BankMvp.UserProfileDb do
 
   def handle_call({:add_user, id, email, password, deposit}, _from, %{users: table}= state) do
     response =  UserController.add_user(table, id, email, password, deposit)
-    {:reply,response, state}
+    {:reply, response, state}
+  end
+
+  def handle_call({:validate_user, user_id, password}, _from, %{users: table}= state) do
+    response = UserController.validate_user(table, user_id, password)
+    {:reply, response, state}
   end
 
   def handle_call(_msg, _from, state) do

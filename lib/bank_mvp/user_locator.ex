@@ -21,13 +21,17 @@ defmodule BankMvp.UserLocator do
     {:ok, %{locator: table}}
   end
 
-  def handle_call({:lookup, userid}, _from, state) do
-    {:reply, {:found, userid}, state}
+  def handle_call({:lookup, user_id}, _from, %{locator: table}= state) do
+    response = case :ets.lookup(table, user_id) do
+      [{user_id, pid}]-> {:ok, pid}
+      []-> {:error, "UserID not found!"}
+    end
+    {:reply, response, state}
   end
 
-  def handle_call({:insert, userid, pid}, _from, %{locator: table}= state) do
-    response = case :ets.insert_new(table, {userid, pid}) do
-      true -> {:ok, userid}
+  def handle_call({:insert, user_id, pid}, _from, %{locator: table}= state) do
+    response = case :ets.insert_new(table, {user_id, pid}) do
+      true -> {:ok, user_id}
       false -> {:error, "UserID and Pid not added in locator!"}
     end
     {:reply, response, state}
