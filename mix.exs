@@ -22,7 +22,8 @@ defmodule BankMvp.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:swoosh, "~> 0.18"}
+      {:swoosh, "~> 0.18"},
+      {:logger_file_backend, "~> 0.0.10"}
     ]
   end
 end

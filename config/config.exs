@@ -17,8 +17,13 @@ config :bank_mvp, BankMailer.Mailer,
 
 
 
-config :logger, :console,
-       format: "\n$time $metadata[$level] $levelpad$message\n",
+config :logger,
+       backends: [:console, {LoggerFileBackend, :error_log}],
+       format: "\n$time $metadata[$level] $levelpad$message\n"
+
+config :logger, :error_log,
+       path: "./logs/error.log",
+       level: :error,
        metadata: [:user_id]
 
 # This configuration is loaded before any dependency and is restricted
