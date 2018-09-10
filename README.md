@@ -71,10 +71,10 @@ iex(10)> BankMvp.Bank.transfer_money("4923263703768902", "password", 150, "42765
 To close the account, the following function needs to be called with user id and password
 
 ```
-iex(4)> BankMvp.Bank.close_account("4923263703768902", "password")
+iex(11)> BankMvp.Bank.close_account("4923263703768902", "password")
 {:ok, :account_closed}
 
 ```
-
+#### Note
 For every hour, you will get the transaction history in your email. If you have not maintained your minimum balance, then for every hour 10% of minimum balance will be charged from your account.
 
