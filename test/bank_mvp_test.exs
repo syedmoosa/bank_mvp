@@ -6,7 +6,8 @@ defmodule BankMvpTest do
   setup do
     password = "password"
     {:ok, user_id} = Bank.register_user("bankmvp53@gmail.com", password, 500)
-    {:ok, [user_id: user_id, password: password]}
+    {:ok, user_id2} = Bank.register_user("bsyed6@gmail.com", password, 500)
+    {:ok, [user_id: user_id, user_id2: user_id2, password: password]}
   end
 
 
@@ -32,6 +33,15 @@ defmodule BankMvpTest do
     user_id = state[:user_id]
     :timer.sleep(2000)
     assert {:ok, id} = Bank.email_transaction(user_id)
+  end
+
+  test "transfer money", state do
+    user_id = state[:user_id]
+    user_id2 = state[:user_id2]
+    password = state[:password]
+    assert {user_id, 1.5e3} = Bank.credit(user_id, password, 1000)
+    assert {user_id, 1125.0} = Bank.transfer_money(user_id, password, 350, user_id2)
+    assert {:error, :cant_transfer_to_same_account} = Bank.transfer_money(user_id, password, 350, user_id)
   end
 
 

@@ -43,7 +43,7 @@ defmodule BankMvp.UserController do
     else
       {:error, :amount_greater_than_balance = reason}-> {:error, reason}
       {:error, :insufficient_balance = reason}-> {:error, reason}
-      {:error, :not_found}-> {:error, :amount_is_not_deposited}
+      {:error, :not_found}-> {:error, :amount_is_not_debited}
     end
 
   end
@@ -62,13 +62,26 @@ defmodule BankMvp.UserController do
 
 
   def get_user_details(table, user_id) do
-    with {:ok, user}<- UserModel.get_user(:users_profile, user_id) do
+    with {:ok, user}<- UserModel.get_user(table, user_id) do
       {:ok, Map.get(user, :email)}
     else
       {:error, :not_found}-> {:error, :unable_to_get_user_details}
     end
   end
 
+  def transfer_money(user_id, amount, to, to_pid) do
+    with {:ok, balance, debit_charge} <- withdraw(user_id, amount),
+         {:ok, new_balance} <- deposit(to, amount),
+         :ok <- inform_transfered_amount(user_id, to_pid, new_balance-amount, new_balance) do
+      {:ok, balance, debit_charge}
+    else
+      {:below_minimum_balance, _balance, _debit_charge} = response-> response
+      {:error, :amount_greater_than_balance = reason}  -> {:error, reason}
+      {:error, :insufficient_balance = reason}-> {:error, reason}
+      {:error, :not_found}-> {:error, :amount_is_not_debited}
+    end
+
+  end
 
 #---------------- INTERNAL FUNCTIONS
 
@@ -104,6 +117,11 @@ defmodule BankMvp.UserController do
       new_balance = current_balance - debit_charge
       {current_balance, Float.round(new_balance,2)} end)
     {:ok, old_balance, new_user, debit_charge}
+  end
+
+  defp inform_transfered_amount(from, to, amount, new_balance) do
+    GenServer.cast(to, {:transfered_amount, from, amount, new_balance})
+    :ok
   end
 
 end

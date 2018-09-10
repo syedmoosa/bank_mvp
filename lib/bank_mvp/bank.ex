@@ -19,7 +19,9 @@ defmodule BankMvp.Bank do
                   :insufficient_balance |
                   :amount_greater_than_balance |
                   :unable_to_get_user_details |
-                  :unable_to_send_email
+                  :unable_to_send_email |
+                  :cant_transfer_to_same_account |
+                  :minimum_transfer_amount_is_200
 
   @spec register_user(email:: String.t(), password:: String.t(), deposit::integer) ::
           {:ok, user_id}| {:error, reason}
@@ -48,7 +50,7 @@ defmodule BankMvp.Bank do
     else
       {:credit, false}-> {:error, :minimum_credit_amount_is_100}
       {:error, :invalid_credentials}-> {:error, :invalid_credentials}
-      {:error, _reason} -> {:error, :amount_is_not_credited}
+      {:error, reason} -> {:error, reason}
     end
   end
 
@@ -61,7 +63,6 @@ defmodule BankMvp.Bank do
       {user_id, balance}
 
     else
-      {:error, :invalid_credentials}-> {:error, :invalid_credentials}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -86,6 +87,24 @@ defmodule BankMvp.Bank do
 
     end
   end
+
+  def transfer_money(user_id, _password, _amount, user_id) do
+    {:error, :cant_transfer_to_same_account}
+  end
+
+  def transfer_money(user_id, password, amount, to) do
+     with {:ok, :valid_credentials} <- validate_user(user_id, password),
+          true <- BV.validate_amount(:transfer, amount),
+          {:ok, pid} <- get_user_location(user_id),
+          {:ok, to_pid} <- get_user_location(to),
+          {:ok, balance} <- transfer_amount(pid, to, to_pid, amount) do
+        {user_id, balance}
+       else
+       {:transfer, false}-> {:error, :minimum_transfer_amount_is_200}
+       {:error, reason}-> {:error, reason}
+       end
+     end
+
 
 #  def transaction(_user_id) do
 #
@@ -133,6 +152,10 @@ defmodule BankMvp.Bank do
 
   defp get_user_details(user_id) do
     GenServer.call(UserProfileDB, {:get_user_details, user_id})
+  end
+
+  defp transfer_amount(pid, to, to_pid, amount) do
+    GenServer.call(pid, {:transfer, to, to_pid, amount})
   end
 
 end

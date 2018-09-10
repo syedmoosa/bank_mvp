@@ -48,8 +48,8 @@ defmodule BankMvp.User do
 
       {:below_minimum_balance, new_balance, debit_charge}->
         Process.send_after(self(), :check_minimum_balance, 60*60*1000)
-        new_transaction = %Transaction{date: timestamp, description: "deposit",
-          type: :credit, balance: new_balance + debit_charge, amount: amount}
+        new_transaction = %Transaction{date: timestamp, description: "withdraw",
+          type: :debit, balance: new_balance + debit_charge, amount: amount}
         dt = %Transaction{date: timestamp, description: "debit charge 5%",
           type: :debit, balance: new_balance, amount: debit_charge}
         new_state = state |> Map.update(:transaction_history, 0, fn transaction->[new_transaction, dt|transaction]  end)
@@ -60,8 +60,46 @@ defmodule BankMvp.User do
     end
   end
 
+
+  def handle_call({:transfer, to, to_pid, amount}, _from, %{id: user_id} = state) do
+    amount = amount/1
+    timestamp = :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - 62167219200
+    case UC.transfer_money(user_id, amount, to, to_pid) do
+      {:ok, new_balance, debit_charge}->
+        Process.send_after(self(), :check_minimum_balance, 60*60*1000)
+        new_transaction = %Transaction{date: timestamp, description: "money transfer to "<> to,
+          type: :debit, balance: new_balance + debit_charge, amount: amount}
+        dt = %Transaction{date: timestamp, description: "debit charge 5%",
+          type: :debit, balance: new_balance, amount: debit_charge}
+        new_state = state |> Map.update(:transaction_history, 0, fn transaction->[new_transaction, dt|transaction]  end)
+        {:reply, {:ok, new_balance}, new_state}
+
+      {:below_minimum_balance, new_balance, debit_charge}->
+        Process.send_after(self(), :check_minimum_balance, 60*60*1000)
+        new_transaction = %Transaction{date: timestamp, description: "money transfer to "<> to,
+          type: :debit, balance: new_balance + debit_charge, amount: amount}
+        dt = %Transaction{date: timestamp, description: "debit charge 5%",
+          type: :debit, balance: new_balance, amount: debit_charge}
+        new_state = state |> Map.update(:transaction_history, 0, fn transaction->[new_transaction, dt|transaction]  end)
+        {:reply, {:ok, new_balance}, new_state}
+
+      response = {:error, _reason}->
+        {:reply, response, state}
+    end
+
+  end
+
   def handle_call(_msg, _from, state) do
     {:reply, :ok, state}
+  end
+
+  def handle_cast({:transfered_amount, from_user, amount, new_balance},  %{id: user_id} = state)do
+    timestamp = :calendar.datetime_to_gregorian_seconds(:calendar.universal_time()) - 62167219200
+    new_transaction = %Transaction{date: timestamp, description: "money transfer from "<> from_user,
+      type: :credit, balance: new_balance, amount: amount}
+    new_state = state |> Map.update(:transaction_history, 0, fn transaction->[new_transaction|transaction]  end)
+    IO.inspect {user_id, new_balance}
+    {:noreply, new_state}
   end
 
   def handle_cast(_msg, state) do
@@ -83,9 +121,9 @@ defmodule BankMvp.User do
     end
   end
 
-  def handle_info(write_transaction_to_file, %{id: user_id, transaction_history: transactions} = state) do
+  def handle_info(:write_transaction_to_file, %{id: user_id, transaction_history: transactions} = state) do
     JsonParser.write_to_file(user_id, transactions)
-    new_state = state |> Map.update(:transaction_history, 0, fn transaction->[]  end)
+    new_state = state |> Map.update(:transaction_history, 0, fn _transaction->[]  end)
     Process.send_after(self(), :write_transaction_to_file, 60*60*1000)
     {:noreply, new_state}
   end
