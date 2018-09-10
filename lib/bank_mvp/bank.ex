@@ -1,6 +1,7 @@
 defmodule BankMvp.Bank do
   alias BankMvp.{UserSupervisor, User}
   alias BankMvp.BankValidation, as: BV
+  require Logger
 
   @doc """
   To register the user with email, password and deposit amount.
@@ -32,15 +33,21 @@ defmodule BankMvp.Bank do
          {:ok, user_id} <- add_user_location(user_id, pid) do
       {:ok, user_id}
     else
-      {:error, reason}-> {:error, reason}
+      {:error, reason}->
+        Logger.metadata(user_id: email)
+        Logger.error reason
+        {:error, reason}
     end
   end
 
-  def register_user(_, _, _)do
+  def register_user(email, _, _)do
+    Logger.metadata(user_id: email)
+    Logger.error "minimum deposit amount is 500"
     {:error, :minimum_deposit_amount_is_500}
   end
 
   def credit(user_id, password, amount) do
+    Logger.metadata(user_id: user_id)
     with {:ok, :valid_credentials} <- validate_user(user_id, password),
          true <- BV.validate_amount(:credit, amount),
          {:ok, pid} <- get_user_location(user_id),
@@ -48,14 +55,21 @@ defmodule BankMvp.Bank do
             {user_id, balance}
 
     else
-      {:credit, false}-> {:error, :minimum_credit_amount_is_100}
-      {:error, :invalid_credentials}-> {:error, :invalid_credentials}
-      {:error, reason} -> {:error, reason}
+      {:credit, false}->
+        Logger.error "minimum credit amount is 100"
+        {:error, :minimum_credit_amount_is_100}
+      {:error, :invalid_credentials}->
+        Logger.error "invalid credentials"
+        {:error, :invalid_credentials}
+      {:error, reason} ->
+        Logger.error reason
+        {:error, reason}
     end
   end
 
 
   def debit(user_id, password, amount) do
+    Logger.metadata(user_id: user_id)
     with {:ok, :valid_credentials} <- validate_user(user_id, password),
          true <- BV.validate_amount(:credit, amount),
          {:ok, pid} <- get_user_location(user_id),
@@ -63,7 +77,9 @@ defmodule BankMvp.Bank do
       {user_id, balance}
 
     else
-      {:error, reason} -> {:error, reason}
+      {:error, reason} ->
+        Logger.error reason
+        {:error, reason}
     end
   end
 
@@ -72,6 +88,7 @@ defmodule BankMvp.Bank do
     import Swoosh.Email
     alias BankMvp.Mailer
 
+    Logger.metadata(user_id: user_id)
     with {:ok, to_user} <- get_user_details(user_id) do
 
     email = new()
@@ -83,25 +100,33 @@ defmodule BankMvp.Bank do
     Mailer.deliver(email)
     else
       {:error, :unable_to_get_user_details}->
+        Logger.error "Unable to get user details"
         {:error, :unable_to_send_email}
 
     end
   end
 
   def transfer_money(user_id, _password, _amount, user_id) do
+    Logger.metadata(user_id: user_id)
+    Logger.error "Money transfer to same account"
     {:error, :cant_transfer_to_same_account}
   end
 
   def transfer_money(user_id, password, amount, to) do
-     with {:ok, :valid_credentials} <- validate_user(user_id, password),
+    Logger.metadata(user_id: user_id)
+    with {:ok, :valid_credentials} <- validate_user(user_id, password),
           true <- BV.validate_amount(:transfer, amount),
           {:ok, pid} <- get_user_location(user_id),
           {:ok, to_pid} <- get_user_location(to),
           {:ok, balance} <- transfer_amount(pid, to, to_pid, amount) do
         {user_id, balance}
        else
-       {:transfer, false}-> {:error, :minimum_transfer_amount_is_200}
-       {:error, reason}-> {:error, reason}
+       {:transfer, false}->
+         Logger.error "transfering amount below 200"
+         {:error, :minimum_transfer_amount_is_200}
+       {:error, reason}->
+         Logger.error reason
+         {:error, reason}
        end
      end
 
