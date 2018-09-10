@@ -45,4 +45,12 @@ defmodule BankMvpTest do
   end
 
 
+  test "closing the account", state do
+    user_id = state[:user_id]
+    password = state[:password]
+    assert {:ok, :account_closed} = Bank.close_account(user_id, password)
+    assert {:error, :user_not_found} = Bank.credit(user_id, password, 500)
+  end
+
+
 end

@@ -29,6 +29,10 @@ defmodule BankMvp.UserProfileDb do
     {:reply, response, state}
   end
 
+  def handle_call({:close_account, user_id}, _from, %{users: table}= state) do
+    response = UserController.close_account(table, user_id)
+    {:reply, response, state}
+  end
 
   def handle_call(_msg, _from, state) do
     {:reply, :ok, state}

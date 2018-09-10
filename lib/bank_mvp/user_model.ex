@@ -17,13 +17,16 @@ defmodule BankMvp.UserModel do
 
   def get_user(table, user_id) do
     case :ets.lookup(table, user_id) do
-      [{user_id, value}]-> {:ok, value}
+      [{_user_id, value}]-> {:ok, value}
       []-> {:error, :not_found}
     end
   end
 
-  def deposit_amount(user_id, amount) do
-
+  def remove_user(table, user_id) do
+    case :ets.delete(table, user_id) do
+      true-> {:ok, :account_closed}
+      _any-> {:error, :account_not_closed}
+    end
   end
 
 

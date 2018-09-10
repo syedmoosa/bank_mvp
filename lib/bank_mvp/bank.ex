@@ -131,9 +131,15 @@ defmodule BankMvp.Bank do
      end
 
 
-#  def transaction(_user_id) do
-#
-#  end
+  def close_account(user_id, password) do
+    with {:ok, :valid_credentials} <- validate_user(user_id, password),
+         {:ok, :account_closed} <- close_user_account(user_id) do
+      {:ok, :account_closed}
+    else
+      {:error, reason}->
+        {:error, reason}
+    end
+  end
 
 
 
@@ -181,6 +187,11 @@ defmodule BankMvp.Bank do
 
   defp transfer_amount(pid, to, to_pid, amount) do
     GenServer.call(pid, {:transfer, to, to_pid, amount})
+  end
+
+  defp close_user_account(user_id) do
+    GenServer.call(UserProfileDB, {:close_account, user_id})
+
   end
 
 end

@@ -83,6 +83,20 @@ defmodule BankMvp.UserController do
 
   end
 
+  def close_account(table, user_id) do
+    with {:ok, user}<- UserModel.get_user(table, user_id),
+         {:greater_than_min_balance, _balance}<- check_balance(Map.get(user, :balance)) do
+      UserModel.remove_user(table, user_id)
+    else
+      {:lesser_than_min_balance, _balance}->
+        {:error, "balance is lesser than minimum balance, you can't close the account"}
+    end
+
+  end
+
+
+
+
 #---------------- INTERNAL FUNCTIONS
 
   defp add(user, amount) do
@@ -123,5 +137,8 @@ defmodule BankMvp.UserController do
     GenServer.cast(to, {:transfered_amount, from, amount, new_balance})
     :ok
   end
+
+  def check_balance(balance) when balance >= 500, do: {:greater_than_min_balance, balance}
+  def check_balance(balance) do {:lesser_than_min_balance, balance} end
 
 end
